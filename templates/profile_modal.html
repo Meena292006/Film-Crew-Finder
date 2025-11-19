@@ -1,0 +1,12 @@
+<div class="modal-header">
+    <h5 class="modal-title">{{ user.name }}'s Profile</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body text-center">
+    <img src="{{ url_for('static', filename='uploads/' + (user.profile_pic or 'default.png')) }}" class="img-fluid mb-2" height="150">
+    <p><strong>Role:</strong> {{ user.role }}</p>
+    <p><strong>City:</strong> {{ user.city }}</p>
+    <p><strong>Experience:</strong> {{ user.experience }}</p>
+    <p><strong>Projects:</strong> {{ user.projects }}</p>
+    <p><strong>Contact:</strong> {{ user.contact }}</p>
+</div>

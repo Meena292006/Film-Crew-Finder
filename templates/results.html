@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Results</title></head>
+<body>
+<h2>Search Results</h2>
+{% if results %}
+  {% for r in results %}
+    <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+      <img src="{{ url_for('static', filename='uploads/' + (r['photo'] or 'default.png')) }}" width="100">
+      <p><b>{{ r['name'] }}</b> — {{ r['role'] }}</p>
+      <p>City: {{ r['city'] }}</p>
+      <p>Experience: {{ r['experience'] }}</p>
+      <p>Projects: {{ r['projects'] }}</p>
+      <p>Contact: {{ r['contact'] }}</p>
+    </div>
+  {% endfor %}
+{% else %}
+  <p>No matching profiles found.</p>
+{% endif %}
+<a href="/dashboard">Back</a>
+</body>
+</html>

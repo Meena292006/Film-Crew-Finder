@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Add Crew Member</h3>
+<form method="POST" enctype="multipart/form-data" class="w-50 mx-auto">
+  <input type="text" name="name" placeholder="Name" class="form-control mb-2" required>
+  <input type="text" name="role" placeholder="Role (e.g. Cameraman)" class="form-control mb-2" required>
+  <input type="text" name="city" placeholder="City" class="form-control mb-2" required>
+  <input type="text" name="experience" placeholder="Experience (e.g. 3 years)" class="form-control mb-2" required>
+  <input type="text" name="contact" placeholder="Contact Number" class="form-control mb-2" required>
+  <input type="file" name="photo" class="form-control mb-2" required>
+  <button class="btn btn-success w-100">Save</button>
+</form>
+{% endblock %}

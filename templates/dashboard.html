@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Film Crew Finder{% endblock %}
+
+{% block content %}
+<style>
+  :root { --gold: #ffd700; --dark: #000; --dark2: #111; --gray: #333; }
+  body { background: var(--dark); color: #fff; overflow-x: hidden; }
+  .gold { color: var(--gold) !important; }
+  .bg-gold { background: var(--gold) !important; color: #000 !important; }
+  .border-gold { border-color: var(--gold) !important; }
+  .btn-gold { background: var(--gold); color: #000; font-weight: bold; }
+  .btn-outline-gold { border: 2px solid var(--gold); color: var(--gold); }
+  .btn-outline-gold:hover, .btn-gold:hover { background: #e6c200; color: #000; }
+  .hover-lift:hover { transform: translateY(-10px); transition: 0.4s; box-shadow: 0 20px 40px rgba(255,215,0,0.3)!important; }
+  .fixed-sidebar { position:fixed; top:0; left:0; width:280px; height:100vh; z-index:1050; background:var(--dark); border-right:4px solid var(--gold); padding-top:100px; }
+  .main-content { margin-left:280px; min-height:100vh; padding:30px; background:linear-gradient(to bottom,#000,#0f0f0f); }
+  .team-card { transition: all 0.4s ease; }
+</style>
+
+<!-- LEFT SIDEBAR -->
+<div class="fixed-sidebar text-center p-4">
+  <img src="{{ url_for('static', filename='uploads/' + (user.profile_pic or 'default.png')) }}"
+       class="rounded-circle mb-4 shadow-lg" width="150" height="150"
+       style="object-fit:cover; border:6px solid var(--gold);">
+  <h3 class="gold mb-1">{{ user.name }}</h3>
+  <p class="text-light fs-4 mb-0">{{ user.role }}</p>
+  <p class="text-secondary mb-4">{{ user.city }}</p>
+  <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-gold w-100 py-3 fw-bold">Edit Profile</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+  <div class="container-fluid">
+
+    <!-- SEARCH -->
+    <div class="card bg-dark2 border-gold shadow-lg p-5 mb-5 rounded-4">
+      <h2 class="gold text-center mb-4 fw-bold">FIND YOUR CREW</h2>
+      <div class="row g-4">
+        <div class="col-md-4"><input type="text" id="searchName" class="form-control form-control-lg bg-dark text-light border-gold rounded-pill" placeholder="Name"></div>
+        <div class="col-md-4"><input type="text" id="searchRole" class="form-control form-control-lg bg-dark text-light border-gold rounded-pill" placeholder="Role"></div>
+        <div class="col-md-4"><input type="text" id="searchCity" class="form-control form-control-lg bg-dark text-light border-gold rounded-pill" placeholder="City"></div>
+      </div>
+    </div>
+
+    <div class="row g-5">
+      <div class="col-lg-8">
+        <div class="row g-4" id="crewContainer">
+          {% for c in crew %}
+          <div class="col-6 col-md-4 col-lg-4 crew-card"
+               data-name="{{ c.name|lower }}" data-role="{{ c.role|lower }}" data-city="{{ c.city|lower }}">
+            <div class="card bg-dark2 border-gold shadow hover-lift h-100 text-center">
+              <div class="pt-4">
+                <img src="{{ url_for('static', filename='uploads/' + (c.profile_pic or 'default.png')) }}"
+                     class="rounded-circle mb-3" width="100" height="100"
+                     style="object-fit:cover; border:5px solid var(--gold);">
+              </div>
+              <div class="card-body pb-4">
+                <h5 class="gold mb-1">{{ c.name }}</h5>
+                <p class="small text-light mb-0">{{ c.role }}</p>
+                <p class="small text-secondary mb-3">{{ c.city }}</p>
+                <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+                  <a href="{{ url_for('view_profile', user_id=c.id) }}" class="btn btn-sm btn-outline-gold">View</a>
+                  <button class="btn btn-sm btn-gold dm-btn" data-id="{{ c.id }}" data-name="{{ c.name }}">DM</button>
+                  {% if not c.in_same_team %}
+                  <button class="btn btn-sm btn-warning add-to-team-btn" data-id="{{ c.id }}">Add to Team</button>
+                  {% else %}
+                  <span class="badge bg-success fs-6">In Team</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-5">
+          <h3 class="gold mb-4 text-center">Pending Team Requests</h3>
+          {% if requests %}
+            {% for r in requests %}
+            <div class="alert alert-dark border-gold p-4 rounded-3 d-flex justify-content-between align-items-center mb-3">
+              <div><strong class="text-light fs-5">{{ r.name }}</strong> wants to join your team</div>
+              <form method="post" action="{{ url_for('accept_request', req_id=r.id) }}" class="d-inline">
+                <input type="text" name="team_name" placeholder="Team Name" class="form-control form-control-sm d-inline w-50" required>
+                <button type="submit" class="btn btn-success btn-sm ms-2">Accept</button>
+              </form>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-center text-secondary fs-4">No pending requests</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <h3 class="gold mb-4 text-center">YOUR TEAMS</h3>
+        <div id="teamsContainer">
+          {% if teams %}
+            {% for t in teams %}
+            <div class="card bg-dark2 border-gold mb-4 shadow team-card" data-teamid="{{ t.id }}">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <a href="#" class="text-light team-link flex-grow-1" data-teamid="{{ t.id }}">
+                    <h5 class="gold mb-0">{{ t.name }}</h5>
+                  </a>
+                  <div class="btn-group">
+                    {% if t.owner_id == user.id %}
+                    <button class="btn btn-sm btn-outline-gold edit-team-btn me-2" data-teamid="{{ t.id }}" data-name="{{ t.name }}">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-team-btn" data-teamid="{{ t.id }}">Delete</button>
+                    {% else %}
+                    <button class="btn btn-sm btn-outline-danger leave-team-btn" data-teamid="{{ t.id }}">Leave</button>
+                    {% endif %}
+                  </div>
+                </div>
+                <p class="text-secondary mb-0">Members: <strong>{{ t.members|length }}</strong></p>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-5 text-secondary">
+              <h5>No teams yet</h5>
+              <p>Add members to create your first team!</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="openChatIcon" class="btn btn-gold rounded-circle shadow-lg position-fixed" style="bottom:30px;right:30px;z-index:9999;width:70px;height:70px;font-size:30px;">
+  Chat
+</button>
+
+<div id="chatPanel" class="position-fixed end-0 bottom-0 me-3 mb-3 bg-dark border border-4 border-gold rounded-4 shadow-2xl" style="width:430px;height:82vh;display:none;z-index:9999;overflow:hidden;">
+  <div class="p-4 border-bottom d-flex justify-content-between" style="background:#000;">
+    <h5 id="chatTitle" class="gold mb-0 fw-bold">Inbox</h5>
+    <button id="closeChat" class="btn-close btn-close-white"></button>
+  </div>
+  <div id="inboxList" class="list-group list-group-flush overflow-auto" style="max-height:60vh;"></div>
+  <div id="chatMessages" class="p-4 overflow-auto d-flex flex-column" style="height:55vh;display:none;"></div>
+  <div id="msgInputArea" class="p-4 border-top" style="background:#000;display:none;">
+    <div class="input-group">
+      <input id="msgInput" type="text" class="form-control bg-dark text-light border-gold rounded-pill" placeholder="Type message...">
+      <button id="sendMsg" class="btn btn-gold rounded-pill ms-3 px-4">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addTeamModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-gold text-light">
+      <div class="modal-header border-0"><h5 class="modal-title gold">Add to Team</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form id="addTeamForm">
+          <input type="hidden" id="addMemberId">
+          <div class="mb-3"><label class="form-label gold">Team Name</label><input type="text" id="newTeamName" class="form-control bg-dark text-light border-gold" required></div>
+          <button type="submit" class="btn btn-gold w-100">Add Member</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editTeamModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-gold text-light">
+      <div class="modal-header border-0"><h5 class="modal-title gold">Edit Team Name</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form id="editTeamForm">
+          <input type="hidden" id="editTeamId">
+          <div class="mb-3"><label class="form-label gold">New Name</label><input type="text" id="editTeamName" class="form-control bg-dark text-light border-gold" required></div>
+          <button type="submit" class="btn btn-gold w-100">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script data-userid="{{ user.id }}" data-username={{ user.name | tojson }}>
+  const socket = io();
+  const CURRENT_USER_ID = Number(document.currentScript.dataset.userid);
+  const CURRENT_USER_NAME = document.currentScript.dataset.username;
+
+  let currentChat = null, chatWith = null, currentTeamId = null;
+
+  const chatPanel = document.getElementById('chatPanel');
+  const chatTitle = document.getElementById('chatTitle');
+  const chatMessages = document.getElementById('chatMessages');
+  const msgInput = document.getElementById('msgInput');
+  const msgInputArea = document.getElementById('msgInputArea');
+  const inboxList = document.getElementById('inboxList');
+
+  function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+  function appendMessage(name, msg, isSent) {
+    const div = document.createElement('div');
+    div.className = `mb-3 p-3 rounded-3 ${isSent ? 'bg-gold text-black align-self-end' : 'bg-secondary text-light align-self-start'} max-w-75`;
+    div.innerHTML = `<strong>${name}:</strong> ${msg}`;
+    chatMessages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function loadDM() { if(chatWith) fetch(`/get_dm/${chatWith}`).then(r=>r.text()).then(h=>{chatMessages.innerHTML=h;scrollToBottom();}); }
+  function loadTeam() { if(currentTeamId) fetch(`/get_team_messages/${currentTeamId}`).then(r=>r.text()).then(h=>{chatMessages.innerHTML=h;scrollToBottom();}); }
+
+  function openChat(type, id, name) {
+    currentChat = type; chatWith = type==='dm'?id:null; currentTeamId = type==='team'?id:null;
+    chatTitle.textContent = type==='dm'?'DM: '+name:name;
+    inboxList.style.display='none'; chatMessages.style.display='flex'; msgInputArea.style.display='block';
+    type==='dm'?loadDM():(loadTeam(), socket.emit('join_team',{team_id:id}));
+  }
+
+  function showInbox() {
+    inboxList.style.display='block'; chatMessages.style.display='none'; msgInputArea.style.display='none';
+    chatTitle.textContent='Inbox';
+    fetch('/get_inbox').then(r=>r.json()).then(chats=>{
+      inboxList.innerHTML = chats.length===0 ? '<div class="p-5 text-center text-secondary">No chats yet</div>' : '';
+      chats.forEach(c=>{
+        const a = document.createElement('a'); a.href='#'; a.className='list-group-item list-group-item-action bg-dark text-light border-0 py-4';
+        a.innerHTML=`<div class="d-flex align-items-center"><i class="fas ${c.type==='dm'?'fa-user':'fa-users'} me-3 gold fs-4"></i><div><div class="fw-bold">${c.name}</div><small class="text-secondary">${c.type==='dm'?'Direct Message':'Team Chat'}</small></div></div>`;
+        a.onclick=e=>{e.preventDefault(); openChat(c.type,c.id,c.name);};
+        inboxList.appendChild(a);
+      });
+    });
+  }
+
+  document.getElementById('openChatIcon').onclick = ()=>{chatPanel.style.display='block'; showInbox();};
+  document.getElementById('closeChat').onclick = ()=>{chatPanel.style.display='none'; currentChat=null;};
+
+  document.addEventListener('click', e=>{
+    if(e.target.closest('.dm-btn')){ e.preventDefault(); const b=e.target.closest('.dm-btn'); openChat('dm',b.dataset.id,b.dataset.name); chatPanel.style.display='block'; }
+    if(e.target.closest('.team-link')){ e.preventDefault(); const l=e.target.closest('.team-link'); const n=l.querySelector('h5')?.textContent||'Team'; openChat('team',l.dataset.teamid,n); chatPanel.style.display='block'; }
+    if(e.target.closest('.delete-team-btn')){ e.stopPropagation(); if(confirm('Delete this team forever?')) fetch(`/delete_team/${e.target.closest('.delete-team-btn').dataset.teamid}`,{method:'POST'}).then(()=>location.reload()); }
+    if(e.target.closest('.leave-team-btn')){
+      e.stopPropagation();
+      const btn = e.target.closest('.leave-team-btn');
+      const card = btn.closest('.team-card');
+      if(confirm('Leave this team?')){
+        fetch(`/leave_team/${btn.dataset.teamid}`, {method:'POST'})
+          .then(()=> {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(100px)';
+            setTimeout(()=>location.reload(), 500);
+          })
+          .catch(()=>alert('Error leaving team'));
+      }
+    }
+  });
+
+  function sendMessage() {
+    const msg = msgInput.value.trim();
+    if(!msg || !currentChat) return;
+    appendMessage(CURRENT_USER_NAME, msg, true);
+    if(currentChat==='dm') socket.emit('send_dm',{receiver_id:chatWith,message:msg});
+    else socket.emit('send_message',{team_id:currentTeamId,message:msg});
+    msgInput.value='';
+  }
+  document.getElementById('sendMsg').onclick = sendMessage;
+  msgInput.onkeypress = e=>e.key==='Enter'&&sendMessage();
+
+  socket.on('new_dm', d=>{ if(currentChat==='dm'&&(chatWith==d.sender_id||CURRENT_USER_ID==d.sender_id)) appendMessage(d.name,d.message,CURRENT_USER_ID===d.sender_id); });
+  socket.on('new_message', d=>{ if(currentChat==='team'&&currentTeamId==d.team_id) appendMessage(d.name,d.message,CURRENT_USER_ID===d.sender_id); });
+
+  ['searchName','searchRole','searchCity'].forEach(id=>document.getElementById(id).oninput=()=>{
+    const n=document.getElementById('searchName').value.trim().toLowerCase();
+    const r=document.getElementById('searchRole').value.trim().toLowerCase();
+    const c=document.getElementById('searchCity').value.trim().toLowerCase();
+    document.querySelectorAll('.crew-card').forEach(card=>{
+      const cn=card.dataset.name, cr=card.dataset.role, cc=card.dataset.city;
+      card.style.display = (!n||cn.includes(n)) && (!r||cr.includes(r)) && (!c||cc.includes(c)) ? '' : 'none';
+    });
+  });
+
+  document.querySelectorAll('.add-to-team-btn').forEach(b=>b.onclick=()=>{document.getElementById('addMemberId').value=b.dataset.id; new bootstrap.Modal(document.getElementById('addTeamModal')).show();});
+  document.getElementById('addTeamForm').onsubmit=e=>{e.preventDefault(); const name=document.getElementById('newTeamName').value.trim(); const mid=document.getElementById('addMemberId').value; fetch('/create_team',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,member_id:mid})}).then(()=>location.reload());};
+  document.querySelectorAll('.edit-team-btn').forEach(b=>b.onclick=e=>{e.stopPropagation(); document.getElementById('editTeamId').value=b.dataset.teamid; document.getElementById('editTeamName').value=b.dataset.name; new bootstrap.Modal(document.getElementById('editTeamModal')).show();});
+  document.getElementById('editTeamForm').onsubmit=e=>{e.preventDefault(); const id=document.getElementById('editTeamId').value; const name=document.getElementById('editTeamName').value.trim(); fetch('/edit_team_name',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({team_id:id,name})}).then(()=>location.reload());};
+</script>
+{% endblock %}

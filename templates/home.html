@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center">
+  <h2 class="mb-4">Find the Right Crew for Your Project</h2>
+  <form class="d-inline-block" method="POST" action="/search">
+      <input type="text" name="role" placeholder="Role (e.g. Editor)" class="form-control mb-2" required>
+      <input type="text" name="city" placeholder="City (e.g. Mumbai)" class="form-control mb-2" required>
+      <button class="btn btn-primary w-100">Search</button>
+  </form>
+  <br><br>
+  {% if session.user_type == 'crew' %}
+    <a href="/add" class="btn btn-success">+ Add Your Profile</a>
+  {% endif %}
+</div>
+{% endblock %}
+

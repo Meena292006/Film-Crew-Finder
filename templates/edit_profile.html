@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+body {
+  background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
+  font-family: 'Poppins', sans-serif;
+  color: white;
+}
+
+.edit-box {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 30px;
+  background: #111;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.edit-box h2 {
+  color: gold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.edit-box input, .edit-box textarea {
+  width: 100%;
+  background: #222;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.edit-box button {
+  width: 100%;
+  padding: 10px;
+  background: gold;
+  border: none;
+  border-radius: 6px;
+  color: black;
+  font-weight: bold;
+}
+
+.edit-box button:hover {
+  background: #ffdd55;
+}
+
+.profile-pic {
+  display: block;
+  margin: 10px auto;
+  border-radius: 10px;
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+}
+</style>
+
+<div class="edit-box">
+  <h2>Edit Your Profile 🎬</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <img src="{{ url_for('static', filename='uploads/' + (user['profile_pic'] or 'default.jpg')) }}" class="profile-pic" alt="Profile">
+    <label>Change Picture</label>
+    <input type="file" name="profile_pic">
+
+    <label>Name</label>
+    <input type="text" name="name" value="{{ user['name'] }}" required>
+
+    <label>Role</label>
+    <input type="text" name="role" value="{{ user['role'] }}" required>
+
+    <label>City</label>
+    <input type="text" name="city" value="{{ user['city'] }}" required>
+
+    <label>Contact</label>
+    <input type="text" name="contact" value="{{ user['contact'] }}" required>
+
+    <label>Experience</label>
+    <textarea name="experience">{{ user['experience'] }}</textarea>
+
+    <label>Projects</label>
+    <textarea name="projects">{{ user['projects'] }}</textarea>
+
+    <button type="submit">💾 Save Changes</button>
+  </form>
+</div>
+
+{% endblock %}

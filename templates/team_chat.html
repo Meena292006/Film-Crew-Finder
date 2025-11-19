@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Team Chat - {{ team['name'] }}</title>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<style>
+body { background: #121212; color: #fff; font-family:'Poppins', sans-serif; padding: 20px; }
+.chat-box { background:#1b1b1b; padding:15px; border-radius:10px; max-height:70vh; overflow-y:auto; margin-bottom:10px; }
+.msg { margin-bottom:10px; }
+.sender { color:#ffcc00; font-weight:bold; }
+input[type=text]{width:80%; padding:10px; border-radius:6px; border:none;}
+button{padding:10px; border:none; border-radius:6px; background:#ffcc00; color:#000; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<a href="{{ url_for('dashboard') }}">⬅ Back to Dashboard</a>
+<h2>Team Chat: {{ team['name'] }}</h2>
+
+<div class="chat-box" id="chatBox">
+{% for m in messages %}
+<div class="msg">
+    <span class="sender">{{ m['sender_name'] }}:</span> {{ m['message'] }}
+</div>
+{% endfor %}
+</div>
+
+<form id="chatForm">
+    <input type="text" id="chatMessage" placeholder="Type a message..." required>
+    <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
+</form>
+
+<script>
+const teamId = "{{ team['id'] }}";
+
+function fetchMessages(){
+    $.get("/get_team_messages/" + teamId, function(data){
+        $("#chatBox").html(data);
+        $("#chatBox").scrollTop($("#chatBox")[0].scrollHeight);
+    });
+}
+
+setInterval(fetchMessages, 1000);
+
+$("#chatForm").submit(function(e){
+    e.preventDefault();
+    let msg = $("#chatMessage").val().trim();
+    if(msg==='') return;
+    $.post("/send_team_message/" + teamId, {message: msg}, function(){
+        $("#chatMessage").val('');
+        fetchMessages();
+    });
+});
+</script>
+
+</body>
+</html>
